@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>레시피 및 가격</title>
+</head>
+
+<body>
+    <h1> 음식 재료 및 레시피 &#127828 </h1>
+    어떤 음식을 만들고 싶으신가요? : 
+    <input id="menu" type="text">
+    <button id="search_rec">검색</button><br><br> 
+    <img id="img" src="https://sunchild.co.kr/web/upload/NNEditor/20200910/mobile/ee3592766f0d9a574b889acf48b4213b_1599715953.jpg" alt="food_img" width="300" height="200">
+    <p class="rec"></p> 
+    <p class="ing"></p>
+    <p class="seq"><br></p>
+
+    <h1>예상 금액 &#x1F4B8 </h1>
+    <input id="exp_price" type="text"> <button id="add">더하기</button> <button id="reset">초기화</button>
+    <p class="amount"></p>
+
+    <h1>재료 가격 검색 &#x1F352</h1>
+    어떤 재료를 검색하시겠습니까?
+    <input id="ing" type="text">
+    <button id="search_ing">검색</button>
+    <p class="research_date"></p>
+    <p class="product"></p>
+    <p class="unit"></p>
+    <p class="date"></p>
+    <p class="cls"></p>
+    <p class="price"></p>
+    <script src="https://code.jquery.com/jquery-3.6.1.js"
+        integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+    <script>    //레시피 검색
+        $(function () {
+            $('#search_rec').click(function () {
+                $(".rec").empty();
+                $("#img").empty();
+                $(".ing").empty();
+                $(".seq").empty();
+                $.ajax({
+                    method: "POST",
+                    url: "http://openapi.foodsafetykorea.go.kr/api/3f3004dca1a24f3bbf6b/COOKRCP01/json/1/5/" + "RCP_NM=" + $("#menu").val(),
+                })
+                    .done(function (msg) {
+                        if (msg.COOKRCP01.total_count == '0') {
+                            alert(msg.COOKRCP01.RESULT['MSG'])
+                            return;
+                        }
+                        console.log(msg)
+                        let len = msg.COOKRCP01.row['length'];
+
+                        if (len > 1) {
+                            for (var i = 0; i < len; i++) {
+                                $(".rec").append("<strong>" + msg.COOKRCP01.row[i].RCP_NM + "</strong><br>");   // 키워드에 맞는 메뉴를 다 출력
+                            }
+                        }
+                        else { // '그' 음식만 출력
+                            $(".rec").append("<strong>" + msg.COOKRCP01.row[0].RCP_NM + "</strong><br>");       // 음식명
+                            document.getElementById("img").src = msg.COOKRCP01.row[0].ATT_FILE_NO_MAIN;         // 음식 사진
+                            $(".ing").append("<strong>" + msg.COOKRCP01.row[0].RCP_PARTS_DTLS + "</strong>");   //재료
+                            //레시피
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL01 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL02 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL03 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL04 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL05 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL06 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL07 + "</strong><br>");
+                            $(".seq").append("<strong>" + msg.COOKRCP01.row[0].MANUAL08 + "</strong><br>");
+                        }
+                    });
+            })
+        })
+    </script>
+    
+    <script>    // 재료 검색
+        $(function () {
+            $('#search_ing').click(function () {
+                $(".research_date").empty();
+                $(".unit").empty();
+                $(".cls").empty();
+                $(".product").empty();
+                $(".date").empty();
+                $(".price").empty();
+                $.ajax({
+                    method: "GET",
+                    url: "http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList&p_cert_key=f23a2b57-a5b9-4dc1-9820-69c81af09c2e&p_cert_id=test&p_returntype=json",
+                })
+                    .done(function (msg) {
+                        price_data = JSON.parse(msg)
+                        console.log(price_data)
+                        $(".research_date").append("<strong>" + "가격 db 업데이트 날짜: " + price_data.condition[0] + "</strong><br>");
+                        var l = price_data.price.length
+                        for (var i=0; i< l;i++){
+                            if(price_data.price[i].productName.match($("#ing").val())){
+                                if(price_data.price[i].product_cls_name.match("소매")){
+                                    $(".product").append("<strong>" + price_data.price[i].item_name + "</strong><br>");
+                                    $(".unit").append("<strong>" + price_data.price[i].unit + "</strong><br>");
+                                    $(".date").append("<strong>" + price_data.price[i].day1 + "</strong><br>");
+                                    $(".price").append("<strong>" + price_data.price[i].dpr1 + "</strong><br>");
+                                }
+                            }
+                        }
+                    });
+                })
+            })        
+
+    </script>
+
+    <script>    // 계산기
+        var exp = 0
+        $('#add').click(function () {
+            $(".amount").empty();
+            exp = exp + Number($("#exp_price").val())
+            $(".amount").append("<strong>" + exp + "</strong><br>");
+        })
+        $('#reset').click(function () {
+            exp = 0
+            $(".amount").empty();
+            $(".amount").append("<strong>" + exp + "</strong><br>");
+        })
+    </script>
+
+</body>
+
+</html>
